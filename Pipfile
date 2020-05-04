@@ -16,7 +16,7 @@ ipykernel = "*"
 jupyter = "*"
 
 [packages]
-tensorflow = "==1.7"
+tensorflow = "==1.15.2"
 scipy = "*"
 scikit-learn = "*"
 opencv-python = "*"
