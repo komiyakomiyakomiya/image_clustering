@@ -1,0 +1,30 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+autopep8 = "*"
+japanize-matplotlib = "*"
+kaggle = "*"
+python-language-server = "*"
+pyls = "*"
+ipdb = "*"
+flake8 = "*"
+pylint = "*"
+ipykernel = "*"
+jupyter = "*"
+
+[packages]
+tensorflow = "==1.7"
+scipy = "*"
+scikit-learn = "*"
+opencv-python = "*"
+h5py = "*"
+matplotlib = "*"
+pillow = "*"
+requests = "*"
+psutil = "*"
+
+[requires]
+python_version = "3.6"
