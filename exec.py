@@ -1,4 +1,3 @@
-
 # %%
 import subprocess
 import os
@@ -7,7 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 import glob
-from src import facenet  # 変更
+from src import facenet  # パス変更
 import tensorflow as tf
 import numpy as np
 from PIL import Image
@@ -17,8 +16,8 @@ class FaceEmbedding(object):
     def __init__(self, model_path):
         # モデルを読み込んでグラフに展開
         facenet.load_model(model_path)
-
-        self.input_image_size = 80
+        # リサイズする縦・横の値
+        self.input_image_size = 150
         self.sess = tf.Session()
         self.images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
         self.embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
@@ -31,14 +30,16 @@ class FaceEmbedding(object):
 
     def load_image(self, image_path, width, height, mode):
         image = Image.open(image_path)
+        # 150x150にリサイズ
         image = image.resize([width, height], Image.BILINEAR)
+        # RGBに変換
         return np.array(image.convert(mode))
 
     def face_embeddings(self, image_path):
         image = self.load_image(
             image_path, self.input_image_size, self.input_image_size, 'RGB')
         # prewhiten()
-        # -> 平均値を差し引き、入力画像のピクセル値の範囲を正規化します。トレーニングがずっと簡単になります。
+        # -> 平均値を差し引き、入力画像のピクセル値の範囲を正規化. トレーニングが簡単になる.
         prewhitened = facenet.prewhiten(image)
         prewhitened = prewhitened.reshape(
             -1, prewhitened.shape[0], prewhitened.shape[1], prewhitened.shape[2])
@@ -60,11 +61,10 @@ features = np.array([face_embedding.face_embeddings(f)[0]
 
 # %%
 # 2次元に次元削減
+PCA
 pca = PCA(n_components=2)
 pca.fit(features)
 reduced = pca.fit_transform(features)
-print(reduced)
-print(reduced.shape)
 
 # %%
 # クラスタリングラベルを出力
@@ -79,6 +79,10 @@ print(pred_label)
 # クラスタリングした結果をプロット
 x = reduced[:, 0]
 y = reduced[:, 1]
+print(reduced)
+print(reduced.shape)
+print(x)
+print(y)
 
 plt.scatter(x, y, c=pred_label)
 plt.colorbar()
@@ -111,19 +115,18 @@ plt.show()
 
 # 追記
 # %%
-# 重心とラベルの対応関係を調べる
-# クラスタごとのベクトルの平均を算出
-for i in range(K):
-    vec_list = [vec for label, vec in zip(pred_label, reduced) if label == i]
-    vec_mean = np.mean(vec_list)
-    print(vec_mean)
-
-# %%
+# kmeans.cluster_centers_の返り値（クラスタの重心）とラベルの対応関係を調べる
+# 0,1,2の順番であることがわかる
 # クラスタの重心を取得
 center_of_mass_array = kmeans.cluster_centers_
 for i in range(K):
     print(np.mean(center_of_mass_array[i]))
 
+# クラスタごとのベクトルの平均を算出
+for i in range(K):
+    vec_list = [vec for label, vec in zip(pred_label, reduced) if label == i]
+    vec_mean = np.mean(vec_list)
+    print(vec_mean)
 # %%
 # 重心同士の距離を算出
 
@@ -136,19 +139,25 @@ def get_distance(vec1, vec2):
 
 distance_map = {}
 for i in range(K):
-    print(i)
-    if i == K-1:
-        distance = get_distance(
-            center_of_mass_array[i], center_of_mass_array[0])
-        distance_map[f'{i}_to_0'] = distance
-        print(distance_map)
-    else:
-        distance = get_distance(
-            center_of_mass_array[i], center_of_mass_array[i+1])
-        distance_map[f'{i}_to_{i+1}'] = distance
-        print(distance_map)
+    for j in range(K):
+        # 同じクラスタ同士の場合
+        if j == i:
+            continue
+        # 既に計算済みの組み合わせ
+        if j < i:
+            continue
 
-# print(np.max(distance_map.values()))
+        distance = get_distance(
+            center_of_mass_array[i], center_of_mass_array[j])
+        distance_map[f'{i}_to_{j}'] = distance
+
+
+print(distance_map)
+print('\n')
+for k, v in distance_map.items():
+    print(k)
+    print(v)
+    print('\n')
 
 
 # %%
@@ -166,6 +175,3 @@ for cluster_num in range(K):
         if label == cluster_num:
             cmd = f'cp {img} {cluster_dir}'
             subprocess.run(cmd.split())
-
-
-# %%
